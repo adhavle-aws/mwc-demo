@@ -1,416 +1,432 @@
-# Agent-based Onboarding and Provisioning System
+# MWC Multi-Agent Infrastructure Provisioning System
 
-An automated system for AWS customer onboarding and infrastructure provisioning using multi-agent architecture with Slack integration.
+An intelligent multi-agent system built on AWS Bedrock AgentCore that automates cloud infrastructure provisioning through natural language.
 
-## Overview
+## 🎯 Overview
 
-This system automates the complete AWS customer onboarding workflow through two specialized agents:
-
-- **Onboarding Agent**: Manages AWS organizational setup, policy application, and CloudFormation package creation
-- **Provisioning Agent**: Handles CloudFormation stack deployment, monitoring, and rollback procedures
-
-The system integrates with Slack for user interaction and uses the agentcore and strands frameworks for agent runtime and workflow orchestration.
-
-## Architecture
-
-### High-Level Architecture
+This system uses three specialized AI agents to transform natural language architecture requirements into deployed AWS infrastructure:
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     Slack Integration Layer                      │
-│  ┌──────────────────┐         ┌─────────────────────────────┐  │
-│  │ Slack Channels   │◄────────┤ Slack Integration Service   │  │
-│  └──────────────────┘         └─────────────────────────────┘  │
-└────────────────────────────────────┬────────────────────────────┘
-                                     │
-┌────────────────────────────────────▼────────────────────────────┐
-│                  Agent Runtime (Agentcore)                       │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────┐ │
-│  │ Onboarding Agent │  │ Provisioning     │  │  Workflow    │ │
-│  │                  │  │ Agent            │  │ Orchestrator │ │
-│  └────────┬─────────┘  └────────┬─────────┘  └──────┬───────┘ │
-└───────────┼────────────────────┼────────────────────┼──────────┘
-            │                    │                    │
-┌───────────▼────────────────────▼────────────────────▼──────────┐
-│                         AWS Services                             │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐ │
-│  │ Organizations│  │ CloudFormation│  │ IAM / S3 / Policies  │ │
-│  └──────────────┘  └──────────────┘  └──────────────────────┘ │
-└──────────────────────────────────────────────────────────────────┘
-            │                    │                    │
-┌───────────▼────────────────────▼────────────────────▼──────────┐
-│                          Data Layer                              │
-│  ┌──────────────────┐  ┌──────────────┐  ┌──────────────────┐ │
-│  │ Workflow State   │  │ Audit Logs   │  │ CFN Package Store│ │
-│  └──────────────────┘  └──────────────┘  └──────────────────┘ │
-└──────────────────────────────────────────────────────────────────┘
+User Request (Natural Language)
+         ↓
+   MWCAgent (Orchestrator)
+         ↓
+   OnboardingAgent → Generates CloudFormation Template
+         ↓
+   ProvisioningAgent → Deploys & Monitors Infrastructure
+         ↓
+   Complete Infrastructure + Documentation
 ```
 
-### Component Flow
+## 🏗️ Architecture
 
-```
-User (Slack) → Slack Integration → Intent Classification → Agent Routing
-                                                                ↓
-                                    ┌───────────────────────────┴──────────────┐
-                                    ↓                                          ↓
-                          Onboarding Agent                         Provisioning Agent
-                                    ↓                                          ↓
-                    ┌───────────────┴────────────┐              ┌─────────────┴──────────┐
-                    ↓                            ↓              ↓                        ↓
-            AWS Organizations              CFN Package      Deploy Stack          Monitor Status
-            Policy Application             Creation         Verify Resources      Handle Rollback
-                    ↓                            ↓              ↓                        ↓
-                    └────────────────┬───────────┘              └────────────┬───────────┘
-                                     ↓                                       ↓
-                            Workflow Orchestrator ← → State Store / Audit Logger
-                                     ↓
-                            Slack Notifications
-```
+### Three-Agent System
 
-## Architecture Decision Records (ADRs)
+1. **OnboardingAgent** - CloudFormation Template Generator
+   - Analyzes natural language architecture requirements
+   - Generates production-grade CloudFormation templates
+   - Applies AWS best practices and security standards
+   - Validates template syntax and structure
 
-This project documents key architectural decisions in the `.kiro/specs/agent-onboarding-provisioning/adr/` directory:
+2. **ProvisioningAgent** - Infrastructure Deployment & Monitoring
+   - Validates CloudFormation templates
+   - Deploys stacks to AWS
+   - Monitors deployment progress
+   - Reports resource details and usage instructions
 
-### Core Framework Decisions
-- **[ADR-0001: Use Agentcore and Strands Frameworks](.kiro/specs/agent-onboarding-provisioning/adr/0001-use-agentcore-and-strands-frameworks.md)** - Foundation for agent runtime and workflow orchestration
-- **[ADR-0002: Slack as Primary User Interface](.kiro/specs/agent-onboarding-provisioning/adr/0002-slack-as-primary-user-interface.md)** - User interaction through familiar communication platform
-- **[ADR-0003: Two-Agent Architecture](.kiro/specs/agent-onboarding-provisioning/adr/0003-two-agent-architecture.md)** - Separation of concerns between onboarding and provisioning
-- **[ADR-0006: TypeScript as Implementation Language](.kiro/specs/agent-onboarding-provisioning/adr/0006-typescript-as-implementation-language.md)** - Type safety and modern development experience
+3. **MWCAgent** - Orchestrator
+   - Coordinates workflow between agents
+   - Manages agent-to-agent communication
+   - Provides unified user interface
 
-### Infrastructure & Integration
-- **[ADR-0004: CloudFormation for Infrastructure Provisioning](.kiro/specs/agent-onboarding-provisioning/adr/0004-cloudformation-for-infrastructure-provisioning.md)** - AWS-native infrastructure as code
-- **[ADR-0005: Event-Driven Architecture](.kiro/specs/agent-onboarding-provisioning/adr/0005-event-driven-architecture.md)** - Asynchronous message-based communication
+## 📋 Prerequisites
 
-### Reliability & Recovery
-- **[ADR-0008: Exponential Backoff for Retries](.kiro/specs/agent-onboarding-provisioning/adr/0008-exponential-backoff-for-retries.md)** - Graceful handling of transient failures
-- **[ADR-0009: Circuit Breaker Pattern](.kiro/specs/agent-onboarding-provisioning/adr/0009-circuit-breaker-pattern.md)** - Prevent cascading failures
-- **[ADR-0010: Checkpoint-Based Workflow Recovery](.kiro/specs/agent-onboarding-provisioning/adr/0010-checkpoint-based-workflow-recovery.md)** - Resume workflows from last successful state
+### Required Software
 
-### Security & Quality
-- **[ADR-0011: IAM Least Privilege Principle](.kiro/specs/agent-onboarding-provisioning/adr/0011-iam-least-privilege-principle.md)** - Minimal AWS permissions
-- **[ADR-0012: Comprehensive Audit Logging](.kiro/specs/agent-onboarding-provisioning/adr/0012-comprehensive-audit-logging.md)** - Full traceability of operations
-- **[ADR-0007: Property-Based Testing Strategy](.kiro/specs/agent-onboarding-provisioning/adr/0007-property-based-testing-strategy.md)** - Comprehensive correctness validation
-
-See [ADR Index](.kiro/specs/agent-onboarding-provisioning/adr/README.md) for complete list and details.
-
-## Project Structure
-
-```
-.
-├── src/
-│   ├── agents/                    # Agent implementations
-│   │   ├── OnboardingAgent.ts     # AWS setup and CFN package creation
-│   │   ├── ProvisioningAgent.ts   # Stack deployment and monitoring
-│   │   ├── aws/                   # AWS service clients
-│   │   │   ├── OrganizationsClient.ts
-│   │   │   ├── CloudFormationClient.ts
-│   │   │   ├── IAMRoleManager.ts
-│   │   │   └── PolicyManager.ts
-│   │   └── cfn/                   # CloudFormation utilities
-│   │       ├── PackageBuilder.ts
-│   │       ├── PackageValidator.ts
-│   │       └── PackageVersionManager.ts
-│   ├── services/                  # External service integrations
-│   │   └── slack/                 # Slack integration
-│   │       ├── SlackIntegrationService.ts
-│   │       ├── SlackConnectionPool.ts
-│   │       ├── MessageRouter.ts
-│   │       ├── IntentClassifier.ts
-│   │       └── NotificationService.ts
-│   ├── workflows/                 # Workflow orchestration
-│   │   ├── WorkflowOrchestrator.ts
-│   │   ├── CheckpointManager.ts
-│   │   └── WorkflowMonitor.ts
-│   ├── data/                      # Data persistence
-│   │   ├── WorkflowStateStore.ts
-│   │   └── AuditLogger.ts
-│   ├── shared/                    # Shared utilities
-│   │   ├── types/                 # TypeScript type definitions
-│   │   ├── utils/                 # Utility functions
-│   │   ├── errors/                # Error handling
-│   │   │   ├── ErrorClassifier.ts
-│   │   │   ├── RetryHandler.ts
-│   │   │   └── CircuitBreaker.ts
-│   │   └── security/              # Security utilities
-│   │       └── SecurityPolicyValidator.ts
-│   ├── config/                    # Configuration management
-│   │   └── ConfigManager.ts
-│   ├── SystemIntegration.ts       # System-wide integration
-│   └── index.ts                   # Main entry point
-├── .kiro/specs/                   # Specifications
-│   └── agent-onboarding-provisioning/
-│       ├── requirements.md        # Detailed requirements
-│       ├── design.md              # System design document
-│       ├── tasks.md               # Implementation tasks
-│       └── adr/                   # Architecture Decision Records
-└── tests/                         # Test files
-```
-
-## Getting Started
-
-### Prerequisites
-
-- **Node.js** 18+ and npm
-- **AWS Account** with appropriate permissions
-- **Slack Workspace** with bot token
-- **AWS CLI** configured (optional, for local AWS testing)
-
-### Installation
-
-1. **Clone the repository**
+1. **Python 3.10+**
    ```bash
-   git clone git@gitlab.aws.dev:adhavle/ict-demo-mwc.git
-   cd ict-demo-mwc
+   python3 --version
    ```
 
-2. **Install dependencies**
+2. **pipx** (for installing AgentCore CLI)
    ```bash
-   npm install
-   ```
-
-3. **Configure environment variables**
-   ```bash
-   cp .env.example .env
-   ```
+   # macOS
+   brew install pipx
    
-   Edit `.env` and configure:
-   ```bash
-   # Slack Configuration (Required)
-   SLACK_BOT_TOKEN=xoxb-your-bot-token
-   SLACK_APP_TOKEN=xapp-your-app-token
-   SLACK_SIGNING_SECRET=your-signing-secret
-   
-   # AWS Configuration (Required)
-   AWS_REGION=us-east-1
-   AWS_ACCESS_KEY_ID=your-access-key
-   AWS_SECRET_ACCESS_KEY=your-secret-key
-   
-   # Application Configuration
-   NODE_ENV=development
-   LOG_LEVEL=info
-   
-   # Optional: Custom endpoints
-   WORKFLOW_STATE_STORE_PATH=./data/workflow-state
-   AUDIT_LOG_PATH=./data/audit-logs
+   # Linux
+   python3 -m pip install --user pipx
+   python3 -m pipx ensurepath
    ```
 
-4. **Build the project**
+3. **AWS CLI v2**
    ```bash
-   npm run build
+   # macOS
+   brew install awscli
+   
+   # Linux
+   curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+   unzip awscliv2.zip
+   sudo ./aws/install
    ```
 
-### Running Locally
+4. **AgentCore Starter Toolkit**
+   ```bash
+   pipx install bedrock-agentcore-starter-toolkit
+   ```
 
-#### Development Mode
-```bash
-# Run with auto-reload
-npm run dev
-```
+### AWS Account Setup
 
-#### Production Mode
-```bash
-# Build and run
-npm run build
-npm start
-```
+1. **AWS Account** with appropriate permissions
+2. **AWS CLI configured** with credentials
+   ```bash
+   aws configure
+   ```
 
-#### Using the Example Script
-```bash
-# Run the example integration
-npm run example
-```
+3. **Bedrock Model Access** - Enable access to Anthropic Claude models:
+   - Navigate to [Amazon Bedrock Console](https://console.aws.amazon.com/bedrock/)
+   - Go to "Model access"
+   - Request access to Anthropic Claude models
+   - Wait for approval (usually instant)
 
-This will:
-- Initialize the system with your configuration
-- Connect Slack integration to agents
-- Wire agents to workflow orchestrator
-- Start listening for Slack messages
+4. **Required IAM Permissions** for deployment:
+   - CloudFormation (create/update/delete stacks)
+   - IAM (create roles and policies)
+   - S3 (create buckets, upload objects)
+   - Bedrock AgentCore (create/update runtimes)
+   - EC2, RDS, Auto Scaling (for provisioned resources)
 
-### Testing
+## 🚀 Deployment Instructions
 
-```bash
-# Run all tests
-npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Run tests with coverage
-npm run test:coverage
-
-# Run linting
-npm run lint
-```
-
-### Slack Bot Setup
-
-1. **Create a Slack App** at https://api.slack.com/apps
-2. **Enable Socket Mode** for real-time communication
-3. **Add Bot Token Scopes**:
-   - `chat:write` - Post messages
-   - `channels:read` - View channels
-   - `groups:read` - View private channels
-   - `im:read` - View direct messages
-   - `mpim:read` - View group messages
-4. **Install App to Workspace** and copy tokens to `.env`
-5. **Subscribe to Bot Events**:
-   - `message.channels`
-   - `message.groups`
-   - `message.im`
-
-### AWS Permissions
-
-The system requires the following AWS permissions:
-
-**Organizations**:
-- `organizations:CreateOrganization`
-- `organizations:CreateOrganizationalUnit`
-- `organizations:AttachPolicy`
-
-**CloudFormation**:
-- `cloudformation:CreateStack`
-- `cloudformation:DescribeStacks`
-- `cloudformation:DeleteStack`
-
-**IAM**:
-- `iam:CreateRole`
-- `iam:AttachRolePolicy`
-- `iam:GetRole`
-
-**S3** (for CFN packages):
-- `s3:PutObject`
-- `s3:GetObject`
-- `s3:ListBucket`
-
-See [IAM Policy Example](docs/iam-policy-example.json) for complete policy.
-
-## Usage
-
-### Basic Example
-
-```typescript
-import { integrateSystem, createDefaultConfig } from './src';
-
-// Create configuration from environment variables
-const config = createDefaultConfig();
-
-// Integrate all system components
-const system = integrateSystem(config);
-
-// Start the system
-await system.start();
-
-// System is now running with:
-// - Slack integration connected to agents
-// - Agents wired to workflow orchestrator
-// - Error handlers configured throughout
-// - Audit logging enabled
-
-// Graceful shutdown
-process.on('SIGINT', async () => {
-  await system.shutdown();
-  process.exit(0);
-});
-```
-
-### Triggering Workflows via Slack
-
-**Onboarding Workflow**:
-```
-@bot onboard customer "Acme Corp" with email "admin@acme.com"
-```
-
-**Provisioning Workflow**:
-```
-@bot provision package "pkg-12345" to account "123456789012"
-```
-
-**Check Status**:
-```
-@bot status workflow "wf-abc123"
-```
-
-## Documentation
-
-- **[Requirements](.kiro/specs/agent-onboarding-provisioning/requirements.md)** - Detailed system requirements
-- **[Design Document](.kiro/specs/agent-onboarding-provisioning/design.md)** - Architecture and design decisions
-- **[Implementation Tasks](.kiro/specs/agent-onboarding-provisioning/tasks.md)** - Development task breakdown
-- **[ADR Index](.kiro/specs/agent-onboarding-provisioning/adr/README.md)** - All architecture decisions
-- **[Configuration Guide](src/config/README.md)** - Configuration options and examples
-
-## Development
-
-### Code Style
-
-This project uses ESLint and Prettier for code formatting:
+### Step 1: Clone the Repository
 
 ```bash
-# Check linting
-npm run lint
-
-# Fix linting issues
-npm run lint:fix
-
-# Format code
-npm run format
+git clone <repository-url>
+cd MWC-demo
 ```
 
-### Adding New Agents
+### Step 2: Configure AWS Credentials
 
-1. Create agent class in `src/agents/`
-2. Implement agent interface from agentcore
-3. Register agent in `src/agents/index.ts`
-4. Wire agent in `src/SystemIntegration.ts`
+Ensure your AWS CLI is configured with credentials for your target account:
 
-### Adding New AWS Services
+```bash
+aws configure
+# Enter your AWS Access Key ID
+# Enter your AWS Secret Access Key
+# Enter your default region (e.g., us-east-1)
+# Enter your default output format (json)
 
-1. Create client in `src/agents/aws/`
-2. Implement error handling and retry logic
-3. Add IAM permissions to documentation
-4. Write unit and integration tests
+# Verify authentication
+aws sts get-caller-identity
+```
 
-## Troubleshooting
+### Step 3: Deploy OnboardingAgent
 
-### Common Issues
+```bash
+cd OnboardingAgent
 
-**Slack Connection Fails**
-- Verify `SLACK_BOT_TOKEN` and `SLACK_APP_TOKEN` are correct
-- Ensure Socket Mode is enabled in Slack App settings
-- Check bot has required scopes
+# Deploy to AWS
+agentcore launch
 
-**AWS Permission Errors**
-- Verify IAM role has required permissions
-- Check AWS credentials are configured correctly
-- Ensure region is set properly
+# Wait for deployment to complete (2-3 minutes)
+# Note the Agent ARN from the output
+```
 
-**Workflow State Not Persisting**
-- Check `WORKFLOW_STATE_STORE_PATH` is writable
-- Verify disk space is available
-- Review audit logs for errors
+**Save the OnboardingAgent ARN** - you'll need it for Step 5.
 
-### Logs
+Example ARN: `arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/OnboardingAgent_Agent-XXXXXXXXXX`
 
-Logs are written to:
-- **Console**: Structured JSON logs
-- **Audit Logs**: `./data/audit-logs/` (configurable)
-- **Workflow State**: `./data/workflow-state/` (configurable)
+### Step 4: Deploy ProvisioningAgent
 
-Set `LOG_LEVEL=debug` for verbose logging.
+```bash
+cd ../ProvisioningAgent
 
-## Contributing
+# Deploy to AWS
+agentcore launch
 
-1. Create a feature branch
-2. Make changes with tests
-3. Run `npm test` and `npm run lint`
-4. Submit merge request
+# Wait for deployment to complete (2-3 minutes)
+# Note the Agent ARN from the output
+```
 
-## License
+**Save the ProvisioningAgent ARN** - you'll need it for Step 5.
 
-MIT
+### Step 5: Configure IAM Permissions
 
-## Support
+The MWCAgent needs permissions to invoke the other two agents, and the ProvisioningAgent needs CloudFormation permissions.
 
-For issues and questions:
-- Create an issue in GitLab
-- Contact the development team
-- See [Documentation](.kiro/specs/agent-onboarding-provisioning/)
+```bash
+cd ..
+
+# Edit the setup scripts with your Agent ARNs
+# Update ONBOARDING_ARN and PROVISIONING_ARN in setup-agent-permissions.sh
+# Update the ARNs in add-inline-policy.sh
+
+# Run the permission setup scripts
+chmod +x setup-agent-permissions.sh
+chmod +x setup-provisioning-permissions.sh
+chmod +x add-inline-policy.sh
+
+./setup-agent-permissions.sh
+./setup-provisioning-permissions.sh
+./add-inline-policy.sh
+```
+
+### Step 6: Deploy MWCAgent (Orchestrator)
+
+```bash
+cd MWCAgent
+
+# Deploy with environment variables pointing to the other agents
+agentcore launch \
+  --env ONBOARDING_AGENT_ARN="<your-onboarding-agent-arn>" \
+  --env PROVISIONING_AGENT_ARN="<your-provisioning-agent-arn>"
+
+# Wait for deployment to complete (2-3 minutes)
+```
+
+### Step 7: Verify Deployment
+
+```bash
+# Check MWCAgent status
+agentcore status
+
+# Test OnboardingAgent
+cd ../OnboardingAgent
+agentcore invoke '{"prompt": "Generate a CloudFormation template for a simple S3 bucket"}'
+
+# Test ProvisioningAgent
+cd ../ProvisioningAgent
+agentcore invoke '{"prompt": "List available CloudFormation tools"}'
+
+# Test full orchestration
+cd ../MWCAgent
+agentcore invoke '{"prompt": "Generate a CloudFormation template for a simple S3 bucket"}'
+```
+
+## 🧪 Testing the System
+
+### Demo Prompt (Recommended)
+
+Use this comprehensive prompt to showcase the system's capabilities:
+
+```bash
+cd OnboardingAgent
+
+agentcore invoke '{"prompt": "Generate a cloudformation template to provision resources to meet requirements outlined in below Q and A. Output should include cloudformation template in <cfn> xml tag, architecture overview, cost optimization tips and quick summary. Q: What kind of application do you want to host ?A: It is a 3 tier web application Q: which aws region do you want the application to be hosted in ?A : us-east-1Q: Any security and/or availability requirements to keep in mind in hosting this application ?A : It should be within a private network and highly available. Q : What kind of storage requirements do you have ?A : We have 30GB of files and video data and 20GB of transaction data for this application.Q : Anything else you want us to consider ?A : Yes, we want to have minimal operations and cost overhead. And one more thing, this app is very cpu intensive."}'
+```
+
+### Expected Output
+
+The agent will generate:
+- ✅ Complete CloudFormation template with 40+ resources
+- ✅ Architecture diagram showing 3-tier design
+- ✅ Cost optimization recommendations
+- ✅ Monthly cost estimates
+- ✅ Deployment instructions
+- ✅ Post-deployment steps
+
+### Simple Test Cases
+
+**Test 1: Simple S3 Bucket**
+```bash
+cd OnboardingAgent
+agentcore invoke '{"prompt": "Generate a CloudFormation template for an S3 bucket with versioning"}'
+```
+
+**Test 2: Lambda Function**
+```bash
+agentcore invoke '{"prompt": "Create a CloudFormation template for a Python Lambda function with API Gateway"}'
+```
+
+**Test 3: Check Stack Status**
+```bash
+cd ../ProvisioningAgent
+agentcore invoke '{"prompt": "Check the status of CloudFormation stack named my-stack"}'
+```
+
+## 📊 Architecture Decisions
+
+This system follows documented architecture decisions:
+
+- [ADR 0001: Use AgentCore and Strands Frameworks](docs/adr/0001-use-agentcore-and-strands-frameworks.md)
+- [ADR 0003: Two-Agent Architecture](docs/adr/0003-two-agent-architecture.md)
+- [ADR 0013: Agents Over Tools for Complex Workflows](docs/adr/0013-agents-over-tools-for-complex-workflows.md)
+
+See [docs/adr/README.md](docs/adr/README.md) for all architecture decisions.
+
+## 🔧 Configuration
+
+### Agent Configuration Files
+
+Each agent has a `.bedrock_agentcore.yaml` configuration file:
+
+- `OnboardingAgent/.bedrock_agentcore.yaml`
+- `ProvisioningAgent/.bedrock_agentcore.yaml`
+- `MWCAgent/.bedrock_agentcore.yaml`
+
+### Environment Variables
+
+**MWCAgent requires:**
+- `ONBOARDING_AGENT_ARN` - ARN of the OnboardingAgent
+- `PROVISIONING_AGENT_ARN` - ARN of the ProvisioningAgent
+- `AWS_REGION` - AWS region (default: us-east-1)
+
+**All agents use:**
+- `AWS_REGION` - AWS region for operations
+
+## 📖 Documentation
+
+- [DEMO-GUIDE.md](DEMO-GUIDE.md) - Complete demo script and testing guide
+- [MULTI-AGENT-SETUP.md](MULTI-AGENT-SETUP.md) - Technical setup documentation
+- [docs/adr/](docs/adr/) - Architecture Decision Records
+
+## 💰 Cost Estimate
+
+**Agent Infrastructure (Monthly):**
+- OnboardingAgent: ~$10-20
+- ProvisioningAgent: ~$10-20
+- MWCAgent: ~$20-40
+- Bedrock API calls: Variable
+- **Total**: ~$40-80/month
+
+**Note:** Costs for deployed infrastructure (EC2, RDS, etc.) are separate and depend on what you provision.
+
+## 🧹 Cleanup
+
+### Stop Agent Sessions (Recommended when not in use)
+
+```bash
+cd MWCAgent
+agentcore stop-session
+
+cd ../OnboardingAgent
+agentcore stop-session
+
+cd ../ProvisioningAgent
+agentcore stop-session
+```
+
+### Destroy Agents (Complete Removal)
+
+```bash
+# Preview what will be deleted
+cd MWCAgent
+agentcore destroy --dry-run
+
+# Destroy MWCAgent
+agentcore destroy
+
+# Destroy OnboardingAgent
+cd ../OnboardingAgent
+agentcore destroy
+
+# Destroy ProvisioningAgent
+cd ../ProvisioningAgent
+agentcore destroy
+```
+
+### Remove IAM Policies
+
+```bash
+# Detach and delete the custom policy
+aws iam detach-role-policy \
+    --role-name AmazonBedrockAgentCoreSDKRuntime-us-east-1-39f859492b \
+    --policy-arn arn:aws:iam::905767016260:policy/MWCAgent-InvokeOtherAgents-Policy
+
+aws iam delete-policy \
+    --policy-arn arn:aws:iam::905767016260:policy/MWCAgent-InvokeOtherAgents-Policy
+
+# Remove inline policy
+aws iam delete-role-policy \
+    --role-name AmazonBedrockAgentCoreSDKRuntime-us-east-1-39f859492b \
+    --policy-name InvokeOtherAgentsInline
+```
+
+## 🐛 Troubleshooting
+
+### Agent Invocation Fails
+
+**Error:** `Runtime initialization time exceeded`
+**Solution:** Wait 30-60 seconds after deployment before first invocation
+
+**Error:** `AccessDeniedException`
+**Solution:** Verify IAM policies are attached and wait 1-2 minutes for propagation
+
+### Template Generation Issues
+
+**Error:** `Validation failed`
+**Solution:** Check CloudWatch logs for detailed error messages
+```bash
+aws logs tail /aws/bedrock-agentcore/runtimes/OnboardingAgent_Agent-XXXXX-DEFAULT --follow
+```
+
+### Deployment Fails
+
+**Error:** `CloudFormation stack creation failed`
+**Solution:** Check stack events for specific resource failures
+```bash
+aws cloudformation describe-stack-events --stack-name <stack-name>
+```
+
+## 🔗 Useful Links
+
+- [AWS Bedrock AgentCore Documentation](https://aws.github.io/bedrock-agentcore-starter-toolkit/)
+- [CloudFormation Documentation](https://docs.aws.amazon.com/cloudformation/)
+- [Strands Agent Framework](https://github.com/awslabs/strands)
+
+## 📝 Development
+
+### Local Development
+
+Each agent can be run locally for development:
+
+```bash
+cd OnboardingAgent
+agentcore dev
+
+# In another terminal
+agentcore invoke --dev '{"prompt": "test message"}'
+```
+
+### Adding New Tools
+
+Edit the agent's `src/main.py` file and add new `@tool` decorated functions:
+
+```python
+@tool
+def your_custom_tool(param: str) -> dict:
+    """Tool description"""
+    # Implementation
+    return {"result": "value"}
+```
+
+### Modifying Agent Behavior
+
+Update the `system_prompt` in each agent's `src/main.py` to change behavior.
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test locally with `agentcore dev`
+5. Submit a pull request
+
+## 📄 License
+
+[Add your license here]
+
+## 👥 Authors
+
+- SDFC Industries
+
+## 🆘 Support
+
+For issues or questions:
+1. Check the [DEMO-GUIDE.md](DEMO-GUIDE.md) for common scenarios
+2. Review [MULTI-AGENT-SETUP.md](MULTI-AGENT-SETUP.md) for technical details
+3. Check CloudWatch logs for error details
+4. Review [Architecture Decision Records](docs/adr/README.md)
+
+---
+
+**Built with AWS Bedrock AgentCore and Strands Agent Framework**
