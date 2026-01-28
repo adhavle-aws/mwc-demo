@@ -387,6 +387,48 @@ This implementation plan breaks down the Agent UI development into discrete, man
   - Document Salesforce migration path
   - _Requirements: 6.7_
 
+- [ ] 33. Configure AWS Amplify deployment
+  - Create amplify.yml configuration file
+  - Configure build settings for Vite
+  - Set up environment variables in Amplify Console
+  - Configure custom domain (optional)
+  - _Requirements: Deployment_
+
+- [ ] 34. Create backend API for agent communication
+  - Set up Lambda function or Express server
+  - Implement /api/agents/invoke endpoint with streaming
+  - Implement /api/agents/status endpoint
+  - Implement /api/stacks/status endpoint
+  - Configure API Gateway (if using Lambda)
+  - Add CORS configuration
+  - _Requirements: 2.3, 5.4, 14.6_
+
+- [ ]* 34.1 Write integration tests for backend API
+  - Test agent invocation
+  - Test streaming responses
+  - Test error handling
+  - _Requirements: 2.3, 9.1_
+
+- [ ] 35. Deploy backend API to AWS
+  - Deploy Lambda functions or ECS service
+  - Configure API Gateway
+  - Set up IAM permissions for AgentCore access
+  - Test API endpoints
+  - _Requirements: 2.3_
+
+- [ ] 36. Connect frontend to backend
+  - Update API service with production endpoint
+  - Test end-to-end integration
+  - Verify streaming works in production
+  - _Requirements: 2.3, 11.1_
+
+- [ ] 37. Final deployment and verification
+  - Deploy UI to AWS Amplify
+  - Verify all features work in production
+  - Test on multiple devices and browsers
+  - Verify performance meets targets
+  - _Requirements: All_
+
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for faster MVP

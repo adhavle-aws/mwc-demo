@@ -31,6 +31,9 @@ Architecture Decision Records document important architectural decisions made du
 - [ADR 0013: Agents Over Tools for Complex Workflows](./0013-agents-over-tools-for-complex-workflows.md)
   - Decision to implement CloudFormation generation and provisioning as agents rather than tools
 
+- [ADR 0014: AWS Amplify for UI Deployment](./0014-aws-amplify-for-ui-deployment.md)
+  - Decision to use AWS Amplify Hosting for deploying the Agent UI React application
+
 - [ADR 0004: CloudFormation for Infrastructure Provisioning](./0004-cloudformation-for-infrastructure-provisioning.md)
   - Decision to use AWS CloudFormation for infrastructure deployment
 

@@ -61,14 +61,17 @@ The Agent UI is a Palantir-grade web application that provides an intuitive inte
 - **Code Highlighting**: Prism.js or Monaco Editor
 - **Build Tool**: Vite
 - **HTTP Client**: Fetch API with streaming support
+- **Deployment**: AWS Amplify Hosting
 
 **Backend API:**
 - **Runtime**: Node.js with Express or Python with FastAPI
 - **AWS SDK**: boto3 (Python) or AWS SDK for JavaScript
 - **WebSocket**: Socket.io or native WebSocket for real-time updates
+- **Deployment**: AWS Lambda + API Gateway or ECS Fargate
 
 **Deployment:**
-- **Initial**: Standalone web application
+- **Initial**: AWS Amplify Hosting (React SPA)
+- **Backend**: AWS Lambda + API Gateway
 - **Future**: Lightning Web Components in Salesforce
 
 ## Components and Interfaces
@@ -925,6 +928,101 @@ Test complete user workflows:
 4. **Focus Management**: Visible focus indicators
 5. **Color Contrast**: Minimum 4.5:1 ratio for text
 6. **Alt Text**: Descriptive alt text for images and icons
+
+## Future Enhancements
+
+1. **Multi-User Collaboration**: Share conversations with team members
+2. **Conversation Search**: Search across all conversations
+3. **Agent Comparison**: Side-by-side agent response comparison
+4. **Custom Themes**: User-selectable color themes
+5. **Voice Input**: Speech-to-text for chat input
+6. **Export Formats**: PDF, Word, Markdown export options
+7. **Notification System**: Browser notifications for long-running deployments
+8. **Agent Analytics**: Usage statistics and performance metrics
+
+## Deployment Architecture
+
+### AWS Amplify Hosting
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         User Browser                             │
+└────────────────────────┬────────────────────────────────────────┘
+                         │ HTTPS
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              AWS Amplify (CloudFront CDN)                        │
+│  • Serves React application globally                            │
+│  • Automatic SSL/TLS certificates                               │
+│  • Git-based CI/CD                                              │
+└────────────────────────┬────────────────────────────────────────┘
+                         │ API Calls
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              API Gateway + Lambda                                │
+│  • /api/agents/invoke (streaming)                               │
+│  • /api/agents/status                                           │
+│  • /api/stacks/status                                           │
+└────────────────────────┬────────────────────────────────────────┘
+                         │ AWS SDK
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              AWS Bedrock AgentCore                               │
+│  • OnboardingAgent                                              │
+│  • ProvisioningAgent                                            │
+│  • MWCAgent                                                     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Deployment Configuration
+
+**amplify.yml:**
+```yaml
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+```
+
+**Environment Variables:**
+- `VITE_API_ENDPOINT`: Backend API URL
+- `VITE_AWS_REGION`: us-east-1
+- `VITE_ONBOARDING_AGENT_ARN`: OnboardingAgent ARN
+- `VITE_PROVISIONING_AGENT_ARN`: ProvisioningAgent ARN
+- `VITE_MWC_AGENT_ARN`: MWCAgent ARN
+
+### Deployment Steps
+
+1. **Push code to GitLab**
+2. **Connect Amplify to repository**
+3. **Configure build settings** (amplify.yml)
+4. **Set environment variables**
+5. **Deploy** (automatic on every commit)
+6. **Access via** amplifyapp.com URL or custom domain
+
+### Backend API Deployment
+
+**Option 1: AWS Lambda + API Gateway (Recommended)**
+- Serverless, scales automatically
+- Pay per request
+- Easy integration with AgentCore
+
+**Option 2: ECS Fargate**
+- Container-based
+- More control over runtime
+- Higher baseline cost
 
 ## Future Enhancements
 
