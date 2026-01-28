@@ -39,6 +39,20 @@ User Request (Natural Language)
    - Manages agent-to-agent communication
    - Provides unified user interface
 
+## 🚀 Deployment Instructions
+
+**👉 See [DEPLOYMENT.md](DEPLOYMENT.md) for complete step-by-step deployment instructions to your AWS account.**
+
+Quick summary:
+1. Install prerequisites (AWS CLI, pipx, AgentCore CLI)
+2. Configure AWS credentials
+3. Enable Bedrock model access
+4. Deploy three agents (OnboardingAgent, ProvisioningAgent, MWCAgent)
+5. Configure IAM permissions
+6. Test the system
+
+**Estimated time:** 15-20 minutes for first-time setup
+
 ## 📋 Prerequisites
 
 ### Required Software
