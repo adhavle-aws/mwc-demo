@@ -36,7 +36,7 @@ def deploy_cloudformation_stack(stack_name: str, template_body: str, parameters:
                 for k, v in parameters.items()
             ]
         
-        # Create stack
+        # Create stack with auto-delete:never tag
         response = cfn_client.create_stack(
             StackName=stack_name,
             TemplateBody=template_body,
@@ -45,7 +45,8 @@ def deploy_cloudformation_stack(stack_name: str, template_body: str, parameters:
             OnFailure='ROLLBACK',
             Tags=[
                 {'Key': 'ManagedBy', 'Value': 'MWCAgent'},
-                {'Key': 'Agent', 'Value': 'ProvisioningAgent'}
+                {'Key': 'Agent', 'Value': 'ProvisioningAgent'},
+                {'Key': 'auto-delete', 'Value': 'never'}
             ]
         )
         
@@ -53,7 +54,7 @@ def deploy_cloudformation_stack(stack_name: str, template_body: str, parameters:
             "success": True,
             "stack_id": response['StackId'],
             "status": "CREATE_IN_PROGRESS",
-            "message": f"Stack {stack_name} deployment initiated successfully"
+            "message": f"Stack {stack_name} deployment initiated successfully with auto-delete:never tag"
         }
     
     except Exception as e:

@@ -32,7 +32,7 @@ agents:
     bedrock_agentcore:
       agent_id: ProvisioningAgent_Agent-oHKfV3FmyU
       agent_arn: arn:aws:bedrock-agentcore:us-east-1:905767016260:runtime/ProvisioningAgent_Agent-oHKfV3FmyU
-      agent_session_id: 72a6bd10-a3aa-44bc-8aeb-778932152555
+      agent_session_id: d1ef62d8-e03b-4dcb-8e3f-94a2c6fb2b23
     codebuild:
       project_name: null
       execution_role: null
