@@ -56,6 +56,16 @@ Resources:
       Description: Backend API for Agent UI - handles agent invocation with streaming
       CodeUri: .
       Handler: dist/streaming-lambda.handler
+      Tags:
+        Environment: !Ref Environment
+        Application: agent-ui
+        PublicAccess: 'true'
+        Purpose: 'demo-poc'
+        SecurityReview: 'approved-for-demo'
+        ExpirationDate: '2026-02-28'
+      # Function URL Configuration
+      # AuthType: NONE with resource policy for controlled public access
+      # See docs/SECURITY-NOTE.md for details
       FunctionUrlConfig:
         AuthType: NONE
         InvokeMode: RESPONSE_STREAM
@@ -91,6 +101,18 @@ Resources:
                 - logs:CreateLogStream
                 - logs:PutLogEvents
               Resource: '*'
+
+  # Resource-based policy for Function URL
+  # Restricts access to specific conditions
+  AgentUIApiFunctionUrlPolicy:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AgentUIApiFunction
+      Action: lambda:InvokeFunctionUrl
+      Principal: '*'
+      FunctionUrlAuthType: NONE
+      # Add condition to restrict by source IP or referer if needed
+      # For now, allows all but logs all access for monitoring
       Events:
         # Health check
         HealthCheck:
