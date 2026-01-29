@@ -194,7 +194,7 @@ async function withRetry<T>(
 export async function* invokeAgent(
   request: AgentInvocationRequest
 ): AsyncGenerator<string, void, unknown> {
-  const url = `${API_BASE_URL}/agents/invoke`;
+  const url = `${API_BASE_URL}/api/agents/invoke`;
 
   logRequest('POST', url, request);
 
@@ -267,7 +267,7 @@ export async function* invokeAgent(
 export async function checkAgentStatus(
   agentId: string
 ): Promise<AgentStatusResponse> {
-  const url = `${API_BASE_URL}/agents/status?agentId=${encodeURIComponent(agentId)}`;
+  const url = `${API_BASE_URL}/api/agents/status/${agentId}`;
 
   logRequest('GET', url);
 
@@ -321,7 +321,7 @@ export async function checkAgentStatus(
 export async function checkAllAgentsStatus(): Promise<
   Record<string, AgentStatus>
 > {
-  const url = `${API_BASE_URL}/agents/list`;
+  const url = `${API_BASE_URL}/api/agents/list`;
 
   logRequest('GET', url);
 
@@ -382,7 +382,7 @@ export async function checkAllAgentsStatus(): Promise<
  * @returns Stack status response
  */
 export async function getStackStatus(stackName: string): Promise<any> {
-  const url = `${API_BASE_URL}/stacks/status?stackName=${encodeURIComponent(stackName)}`;
+  const url = `${API_BASE_URL}/api/stacks/status/${stackName}`;
 
   logRequest('GET', url);
 
