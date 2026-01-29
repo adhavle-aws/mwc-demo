@@ -1,0 +1,172 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Agent UI Backend API - Lambda + API Gateway deployment
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues:
+      - development
+      - staging
+      - production
+    Description: Deployment environment
+  
+  OnboardingAgentArn:
+    Type: String
+    Description: ARN of the OnboardingAgent
+  
+  ProvisioningAgentArn:
+    Type: String
+    Description: ARN of the ProvisioningAgent
+  
+  MWCAgentArn:
+    Type: String
+    Description: ARN of the MWCAgent
+  
+  CorsOrigin:
+    Type: String
+    Default: '*'
+    Description: CORS origin for API requests (use specific domain in production)
+
+Globals:
+  Function:
+    Timeout: 300
+    MemorySize: 512
+    Runtime: nodejs20.x
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        NODE_ENV: !Ref Environment
+        ONBOARDING_AGENT_ARN: !Ref OnboardingAgentArn
+        PROVISIONING_AGENT_ARN: !Ref ProvisioningAgentArn
+        MWC_AGENT_ARN: !Ref MWCAgentArn
+        ONBOARDING_AGENT_ALIAS_ID: TSTALIASID
+        PROVISIONING_AGENT_ALIAS_ID: TSTALIASID
+        MWC_AGENT_ALIAS_ID: TSTALIASID
+        CORS_ORIGIN: !Ref CorsOrigin
+
+Resources:
+  # Lambda Function
+  AgentUIApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'agent-ui-api-${Environment}'
+      Description: Backend API for Agent UI - handles agent invocation and CloudFormation monitoring
+      CodeUri: .
+      Handler: dist/lambda.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeAgent
+              Resource:
+                - !Ref OnboardingAgentArn
+                - !Ref ProvisioningAgentArn
+                - !Ref MWCAgentArn
+            - Effect: Allow
+              Action:
+                - cloudformation:DescribeStacks
+                - cloudformation:DescribeStackResources
+                - cloudformation:DescribeStackEvents
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource: '*'
+      Events:
+        # Health check
+        HealthCheck:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AgentUIApi
+            Path: /health
+            Method: GET
+        
+        # Agent endpoints
+        ListAgents:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AgentUIApi
+            Path: /api/agents/list
+            Method: GET
+        
+        GetAgentStatus:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AgentUIApi
+            Path: /api/agents/status/{agentId}
+            Method: GET
+        
+        InvokeAgent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AgentUIApi
+            Path: /api/agents/invoke
+            Method: POST
+        
+        # Stack endpoints
+        GetStackStatus:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AgentUIApi
+            Path: /api/stacks/status/{stackName}
+            Method: GET
+
+  # API Gateway
+  AgentUIApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub 'agent-ui-api-${Environment}'
+      StageName: !Ref Environment
+      Cors:
+        AllowMethods: "'GET,POST,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: !Sub "'${CorsOrigin}'"
+        MaxAge: "'600'"
+      BinaryMediaTypes:
+        - '*/*'
+      EndpointConfiguration:
+        Type: REGIONAL
+      TracingEnabled: true
+      MethodSettings:
+        - ResourcePath: '/*'
+          HttpMethod: '*'
+          LoggingLevel: 'OFF'
+          DataTraceEnabled: false
+          MetricsEnabled: true
+
+  # CloudWatch Log Group
+  ApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/agent-ui-api-${Environment}'
+      RetentionInDays: 30
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub 'https://${AgentUIApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}'
+    Export:
+      Name: !Sub '${AWS::StackName}-ApiUrl'
+  
+  FunctionArn:
+    Description: Lambda Function ARN
+    Value: !GetAtt AgentUIApiFunction.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-FunctionArn'
+  
+  FunctionName:
+    Description: Lambda Function Name
+    Value: !Ref AgentUIApiFunction
+    Export:
+      Name: !Sub '${AWS::StackName}-FunctionName'
+  
+  ApiId:
+    Description: API Gateway ID
+    Value: !Ref AgentUIApi
+    Export:
+      Name: !Sub '${AWS::StackName}-ApiId'
