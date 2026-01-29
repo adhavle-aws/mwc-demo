@@ -90,19 +90,29 @@ const MainContent: React.FC = () => {
 
     try {
       // Invoke agent via API
+      console.log('[MainContent] Invoking agent:', selectedAgentId, 'Prompt length:', content.trim().length);
+      
       const stream = invokeAgent({
         agentId: selectedAgentId,
         prompt: content.trim(),
       });
 
       let fullResponse = '';
+      let chunkCount = 0;
 
       // Stream response chunks
       for await (const chunk of stream) {
+        chunkCount++;
         fullResponse += chunk;
         setStreamingContent(fullResponse);
         updateStreamingMessage(agentMessageId, fullResponse);
       }
+
+      console.log('[MainContent] Received response:', {
+        length: fullResponse.length,
+        chunks: chunkCount,
+        preview: fullResponse.substring(0, 100)
+      });
 
       // Parse the complete response
       const parsed = parseAgentResponse(fullResponse, agentType);
@@ -110,11 +120,31 @@ const MainContent: React.FC = () => {
 
       // Clear streaming state
       setStreamingContent('');
-    } catch (error) {
-      console.error('Error sending message:', error);
+    } catch (error: any) {
+      console.error('[MainContent] Error sending message:', error);
+      console.error('[MainContent] Error details:', {
+        name: error.name,
+        message: error.message,
+        type: error.type,
+        statusCode: error.statusCode,
+        retryable: error.retryable,
+        details: error.details
+      });
+      
+      // Create detailed error message
+      let errorContent = 'Sorry, I encountered an error processing your request.';
+      
+      if (error.message) {
+        errorContent += `\n\nError: ${error.message}`;
+      }
+      
+      if (error.details) {
+        errorContent += `\n\nDetails: ${error.details}`;
+      }
+      
+      errorContent += '\n\nPlease try again or check the browser console for more information.';
       
       // Update message with error
-      const errorContent = 'Sorry, I encountered an error processing your request. Please try again.';
       updateStreamingMessage(agentMessageId, errorContent);
       setStreamingContent('');
     } finally {

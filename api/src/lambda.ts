@@ -105,7 +105,13 @@ async function handleAgentInvocation(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   try {
-    const body = JSON.parse(event.body || '{}');
+    // Decode body if it's base64-encoded
+    let bodyString = event.body || '{}';
+    if (event.isBase64Encoded) {
+      bodyString = Buffer.from(bodyString, 'base64').toString('utf-8');
+    }
+    
+    const body = JSON.parse(bodyString);
     const { agentId, prompt, sessionId } = body;
 
     if (!agentId || !prompt) {
