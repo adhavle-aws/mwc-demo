@@ -223,34 +223,25 @@ export async function* invokeAgent(
       return res;
     });
 
-    // Handle streaming response
-    if (!response.body) {
+    // Lambda returns JSON response, not streaming
+    // Format: { response: "full text", sessionId: "..." }
+    const data = await response.json();
+    
+    if (data.error) {
       throw new AgentAPIError(
-        'Response body is null',
+        data.message || 'Agent invocation failed',
         'agent',
         response.status,
         false
       );
     }
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-
-        if (done) {
-          logResponse(url, response.status, 'Stream complete');
-          break;
-        }
-
-        const chunk = decoder.decode(value, { stream: true });
-        yield chunk;
-      }
-    } finally {
-      reader.releaseLock();
+    // Yield the complete response
+    if (data.response) {
+      yield data.response;
     }
+
+    logResponse(url, response.status, 'Response received');
   } catch (error) {
     logError(url, error as Error);
 
