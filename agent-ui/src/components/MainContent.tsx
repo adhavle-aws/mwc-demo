@@ -4,7 +4,7 @@ import ResponseViewer from './ResponseViewer';
 import { useAgent, useConversation } from '../context/hooks';
 import { parseAgentResponse } from '../utils/responseParser';
 import { invokeAgent } from '../services/agentService';
-import type { Message, AgentType } from '../types';
+import type { Message, AgentType, ParsedResponse } from '../types';
 
 /**
  * MainContent Component
@@ -88,6 +88,27 @@ const MainContent: React.FC = () => {
     setIsLoading(true);
     setStreamingContent('');
 
+    // Create a temporary "Live Response" tab while streaming
+    const streamingResponse: ParsedResponse = {
+      raw: '',
+      sections: [{
+        type: 'summary',
+        title: 'Live Response',
+        content: '',
+      }],
+      tabs: [{
+        id: 'live',
+        label: '🔴 Live Response',
+        content: {
+          type: 'summary',
+          title: 'Live Response',
+          content: '',
+        },
+      }],
+    };
+    setLastResponse(streamingResponse);
+    setActiveTab('live');
+
     try {
       // Invoke agent via API
       console.log('[MainContent] Invoking agent:', selectedAgentId, 'Prompt length:', content.trim().length);
@@ -106,6 +127,26 @@ const MainContent: React.FC = () => {
         fullResponse += chunk;
         setStreamingContent(fullResponse);
         updateStreamingMessage(agentMessageId, fullResponse);
+        
+        // Update the live tab with streaming content
+        const liveResponse: ParsedResponse = {
+          raw: fullResponse,
+          sections: [{
+            type: 'summary',
+            title: 'Live Response',
+            content: fullResponse,
+          }],
+          tabs: [{
+            id: 'live',
+            label: '🔴 Live Response',
+            content: {
+              type: 'summary',
+              title: 'Live Response',
+              content: fullResponse,
+            },
+          }],
+        };
+        setLastResponse(liveResponse);
       }
 
       console.log('[MainContent] Received response:', {
@@ -114,9 +155,14 @@ const MainContent: React.FC = () => {
         preview: fullResponse.substring(0, 100)
       });
 
-      // Parse the complete response
+      // Parse the complete response and populate all tabs
       const parsed = parseAgentResponse(fullResponse, agentType);
       setLastResponse(parsed);
+      
+      // Switch to first parsed tab if available
+      if (parsed.tabs.length > 0) {
+        setActiveTab(parsed.tabs[0].id);
+      }
 
       // Clear streaming state
       setStreamingContent('');
@@ -150,7 +196,7 @@ const MainContent: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedAgent, selectedAgentId, addMessage, updateStreamingMessage, agentType, setLastResponse]);
+  }, [selectedAgent, selectedAgentId, addMessage, updateStreamingMessage, agentType, setLastResponse, setActiveTab]);
 
   /**
    * Handle tab change in ResponseViewer

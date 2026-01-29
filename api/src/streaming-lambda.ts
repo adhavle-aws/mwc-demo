@@ -51,12 +51,7 @@ export const handler = awslambda.streamifyResponse(
     if (event.requestContext?.http?.method === 'OPTIONS') {
       const metadata = {
         statusCode: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-          'Access-Control-Max-Age': '600',
-        },
+        headers: {},
       };
       responseStream = awslambda.HttpResponseStream.from(responseStream, metadata);
       responseStream.end();
@@ -73,7 +68,6 @@ export const handler = awslambda.streamifyResponse(
         statusCode: 400,
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
         },
       };
       responseStream = awslambda.HttpResponseStream.from(responseStream, metadata);
@@ -94,7 +88,6 @@ export const handler = awslambda.streamifyResponse(
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
-        'Access-Control-Allow-Origin': '*',
         'X-Accel-Buffering': 'no',
       },
     };

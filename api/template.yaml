@@ -63,10 +63,9 @@ Resources:
           AllowOrigins:
             - '*'
           AllowMethods:
-            - GET
             - POST
           AllowHeaders:
-            - Content-Type
+            - content-type
           MaxAge: 600
       Policies:
         - Statement:
