@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Agent API</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success { background: #1a4d2e; border: 1px solid #2d7a4f; }
+        .error { background: #4d1a1a; border: 1px solid #7a2d2d; }
+        .loading { background: #4d4d1a; border: 1px solid #7a7a2d; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Agent API Test Page</h1>
+    <p>API URL: <code>https://kmp3lr1x97.execute-api.us-east-1.amazonaws.com/production</code></p>
+    
+    <div>
+        <button onclick="testHealth()">Test Health</button>
+        <button onclick="testListAgents()">List Agents</button>
+        <button onclick="testSimpleInvoke()">Test Simple Invoke</button>
+        <button onclick="clearOutput()">Clear</button>
+    </div>
+
+    <div id="status"></div>
+    <div id="output"></div>
+
+    <script>
+        const API_URL = 'https://kmp3lr1x97.execute-api.us-east-1.amazonaws.com/production';
+        
+        function setStatus(message, type = 'loading') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+        }
+
+        function appendOutput(text) {
+            const output = document.getElementById('output');
+            output.textContent += text + '\n';
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function clearOutput() {
+            document.getElementById('output').textContent = '';
+            document.getElementById('status').textContent = '';
+        }
+
+        async function testHealth() {
+            clearOutput();
+            setStatus('Testing health endpoint...', 'loading');
+            
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+                
+                appendOutput('✅ Health Check Response:');
+                appendOutput(JSON.stringify(data, null, 2));
+                setStatus('✅ Health check passed', 'success');
+            } catch (error) {
+                appendOutput('❌ Error: ' + error.message);
+                setStatus('❌ Health check failed', 'error');
+                console.error(error);
+            }
+        }
+
+        async function testListAgents() {
+            clearOutput();
+            setStatus('Fetching agent list...', 'loading');
+            
+            try {
+                const response = await fetch(`${API_URL}/api/agents/list`);
+                const data = await response.json();
+                
+                appendOutput('✅ Agents List:');
+                appendOutput(JSON.stringify(data, null, 2));
+                setStatus('✅ Agent list retrieved', 'success');
+            } catch (error) {
+                appendOutput('❌ Error: ' + error.message);
+                setStatus('❌ Failed to list agents', 'error');
+                console.error(error);
+            }
+        }
+
+        async function testSimpleInvoke() {
+            clearOutput();
+            setStatus('Invoking OnboardingAgent... (may take 20-30 seconds)', 'loading');
+            
+            const startTime = Date.now();
+            
+            try {
+                appendOutput('📤 Sending request...\n');
+                
+                const response = await fetch(`${API_URL}/api/agents/invoke`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        agentId: 'onboarding',
+                        prompt: 'Generate a simple S3 bucket CloudFormation template'
+                    })
+                });
+
+                const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const data = await response.json();
+                
+                appendOutput(`✅ Response received in ${duration}s\n`);
+                appendOutput('Session ID: ' + data.sessionId + '\n');
+                appendOutput('Response length: ' + data.response.length + ' characters\n');
+                appendOutput('\n📄 Response:\n');
+                appendOutput('─'.repeat(80));
+                appendOutput(data.response.substring(0, 500) + '...');
+                appendOutput('─'.repeat(80));
+                
+                setStatus(`✅ Agent invoked successfully (${duration}s)`, 'success');
+            } catch (error) {
+                const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+                appendOutput(`\n❌ Error after ${duration}s: ` + error.message);
+                appendOutput('\nFull error:');
+                appendOutput(JSON.stringify(error, null, 2));
+                setStatus('❌ Agent invocation failed', 'error');
+                console.error('Full error object:', error);
+            }
+        }
+    </script>
+</body>
+</html>
