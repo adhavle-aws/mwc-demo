@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Agent UI Backend API - Lambda + API Gateway deployment
+Description: Agent UI Backend API - Lambda + API Gateway deployment (Updated for AgentCore)
 
 Parameters:
   Environment:
@@ -60,11 +60,14 @@ Resources:
         - Statement:
             - Effect: Allow
               Action:
-                - bedrock:InvokeAgent
+                - bedrock-agentcore:InvokeAgentRuntime
               Resource:
                 - !Ref OnboardingAgentArn
+                - !Sub '${OnboardingAgentArn}/*'
                 - !Ref ProvisioningAgentArn
+                - !Sub '${ProvisioningAgentArn}/*'
                 - !Ref MWCAgentArn
+                - !Sub '${MWCAgentArn}/*'
             - Effect: Allow
               Action:
                 - cloudformation:DescribeStacks

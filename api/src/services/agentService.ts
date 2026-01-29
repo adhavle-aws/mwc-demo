@@ -1,31 +1,12 @@
-import {
-  BedrockAgentRuntimeClient,
-  InvokeAgentCommand,
-  InvokeAgentCommandInput,
-} from '@aws-sdk/client-bedrock-agent-runtime';
 import { config } from '../config';
 import { Agent, AgentStatus, AgentStatusResponse } from '../types';
+import { AgentCoreClient } from './agentCoreClient';
 
 export class AgentService {
-  private client: BedrockAgentRuntimeClient;
+  private agentCoreClient: AgentCoreClient;
 
   constructor() {
-    // Configure AWS SDK client with credentials
-    const clientConfig: any = {
-      region: config.aws.region,
-    };
-
-    // Add explicit credentials if provided via environment variables
-    if (config.aws.credentials.accessKeyId && config.aws.credentials.secretAccessKey) {
-      clientConfig.credentials = {
-        accessKeyId: config.aws.credentials.accessKeyId,
-        secretAccessKey: config.aws.credentials.secretAccessKey,
-        sessionToken: config.aws.credentials.sessionToken,
-      };
-    }
-    // Otherwise, AWS SDK will use default credential chain
-
-    this.client = new BedrockAgentRuntimeClient(clientConfig);
+    this.agentCoreClient = new AgentCoreClient(config.aws.region);
   }
 
   /**
@@ -64,54 +45,18 @@ export class AgentService {
       throw new Error(`Agent ARN not configured for: ${agentId}`);
     }
 
-    // Extract agent ID from ARN
-    // ARN format: arn:aws:bedrock:region:account:agent/agentId
-    const arnParts = agent.arn.split('/');
-    const agentIdFromArn = arnParts[arnParts.length - 1];
-
-    const input: InvokeAgentCommandInput = {
-      agentId: agentIdFromArn,
-      agentAliasId: agent.aliasId,
-      sessionId: sessionId || this.generateSessionId(),
-      inputText: prompt,
-    };
-
     try {
-      const command = new InvokeAgentCommand(input);
-      const response = await this.client.send(command);
-
-      // Return async generator for streaming
-      return this.streamResponse(response.completion);
+      // Invoke AgentCore via WebSocket
+      return this.agentCoreClient.invokeAgent({
+        runtimeArn: agent.arn,
+        prompt,
+        sessionId: sessionId || this.generateSessionId(),
+        region: config.aws.region,
+      });
     } catch (error: any) {
-      // Handle AWS SDK errors
+      // Handle errors
       this.handleAwsError(error, agentId);
       throw error; // Re-throw after logging
-    }
-  }
-
-  /**
-   * Stream response chunks
-   */
-  private async *streamResponse(
-    completion: any
-  ): AsyncIterable<string> {
-    if (!completion) {
-      return;
-    }
-
-    try {
-      for await (const event of completion) {
-        if (event.chunk) {
-          const chunk = event.chunk;
-          if (chunk.bytes) {
-            const text = new TextDecoder().decode(chunk.bytes);
-            yield text;
-          }
-        }
-      }
-    } catch (error: any) {
-      console.error('Error streaming response:', error);
-      throw new Error(`Streaming failed: ${error.message}`);
     }
   }
 
