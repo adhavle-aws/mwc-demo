@@ -111,6 +111,13 @@ Resources:
             Path: /api/agents/invoke
             Method: POST
         
+        InvokeAgentOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AgentUIApi
+            Path: /api/agents/invoke
+            Method: OPTIONS
+        
         # Stack endpoints
         GetStackStatus:
           Type: Api

@@ -28,6 +28,11 @@ export async function handler(
       requestId: context.awsRequestId,
     });
 
+    // Handle OPTIONS requests for CORS preflight
+    if (event.httpMethod === 'OPTIONS') {
+      return createResponse(200, {});
+    }
+
     // Initialize agent service
     const service = initializeAgentService();
 
