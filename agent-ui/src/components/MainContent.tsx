@@ -3,6 +3,7 @@ import ChatWindow from './ChatWindow';
 import ResponseViewer from './ResponseViewer';
 import { useAgent, useConversation } from '../context/hooks';
 import { parseAgentResponse } from '../utils/responseParser';
+import { invokeAgent } from '../services/agentService';
 import type { Message, AgentType } from '../types';
 
 /**
@@ -88,9 +89,27 @@ const MainContent: React.FC = () => {
     setStreamingContent('');
 
     try {
-      // TODO: Replace with actual API call to agent service
-      // For now, simulate streaming response
-      await simulateStreamingResponse(agentMessageId);
+      // Invoke agent via API
+      const stream = invokeAgent({
+        agentId: selectedAgentId,
+        prompt: content.trim(),
+      });
+
+      let fullResponse = '';
+
+      // Stream response chunks
+      for await (const chunk of stream) {
+        fullResponse += chunk;
+        setStreamingContent(fullResponse);
+        updateStreamingMessage(agentMessageId, fullResponse);
+      }
+
+      // Parse the complete response
+      const parsed = parseAgentResponse(fullResponse, agentType);
+      setLastResponse(parsed);
+
+      // Clear streaming state
+      setStreamingContent('');
     } catch (error) {
       console.error('Error sending message:', error);
       
@@ -101,105 +120,7 @@ const MainContent: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedAgent, selectedAgentId, addMessage, updateStreamingMessage]);
-
-  /**
-   * Simulate streaming response (temporary until API is implemented)
-   * This will be replaced with actual agent API calls
-   */
-  const simulateStreamingResponse = async (messageId: string) => {
-    // Simulate different responses based on agent type
-    let responseText = '';
-    
-    if (agentType === 'onboarding') {
-      responseText = `## Architecture Overview
-
-Based on your requirements, I recommend a serverless architecture using AWS Lambda and API Gateway.
-
-<cfn>
-AWSTemplateFormatVersion: '2010-09-09'
-Description: Sample CloudFormation Template
-
-Resources:
-  MyLambdaFunction:
-    Type: AWS::Lambda::Function
-    Properties:
-      FunctionName: MyFunction
-      Runtime: python3.9
-      Handler: index.handler
-      Code:
-        ZipFile: |
-          def handler(event, context):
-              return {'statusCode': 200}
-</cfn>
-
-## Cost Optimization Tips
-
-1. Use Lambda for compute to pay only for execution time
-2. Implement caching with CloudFront
-3. Use S3 for static content storage
-
-## Quick Summary
-
-This architecture provides a scalable, cost-effective solution for your application.`;
-    } else if (agentType === 'provisioning') {
-      responseText = `## Deployment Summary
-
-Stack deployment initiated successfully.
-
-## Provisioned Resources
-
-- Lambda Function: MyFunction (CREATE_COMPLETE)
-- API Gateway: MyAPI (CREATE_IN_PROGRESS)
-- S3 Bucket: my-bucket (CREATE_COMPLETE)
-
-## Stack Outputs
-
-- ApiEndpoint: https://api.example.com
-- BucketName: my-bucket-12345
-
-## Deployment Timeline
-
-- 10:00:00 - Stack creation started
-- 10:00:15 - Lambda function created
-- 10:00:30 - S3 bucket created
-- 10:00:45 - API Gateway in progress`;
-    } else {
-      responseText = `## Workflow Summary
-
-I've coordinated the following actions:
-
-1. Analyzed your requirements with OnboardingAgent
-2. Generated CloudFormation template
-3. Initiated deployment with ProvisioningAgent
-
-## Next Steps
-
-The infrastructure is being provisioned. You can monitor progress in the deployment tab.`;
-    }
-
-    // Simulate streaming by adding characters gradually
-    const words = responseText.split(' ');
-    let accumulated = '';
-
-    for (let i = 0; i < words.length; i++) {
-      accumulated += (i > 0 ? ' ' : '') + words[i];
-      setStreamingContent(accumulated);
-      
-      // Small delay to simulate streaming
-      await new Promise(resolve => setTimeout(resolve, 50));
-    }
-
-    // Update the actual message with complete content
-    updateStreamingMessage(messageId, responseText);
-
-    // Parse the response and set it
-    const parsed = parseAgentResponse(responseText, agentType);
-    setLastResponse(parsed);
-
-    // Clear streaming state
-    setStreamingContent('');
-  };
+  }, [selectedAgent, selectedAgentId, addMessage, updateStreamingMessage, agentType, setLastResponse]);
 
   /**
    * Handle tab change in ResponseViewer
