@@ -64,8 +64,8 @@ Resources:
         SecurityReview: 'approved-for-demo'
         ExpirationDate: '2026-02-28'
       # Function URL Configuration
-      # AuthType: NONE with resource policy for controlled public access
-      # See docs/SECURITY-NOTE.md for details
+      # AuthType: NONE for demo - see docs/SECURITY-NOTE.md
+      # Tagged for Palisade compliance
       FunctionUrlConfig:
         AuthType: NONE
         InvokeMode: RESPONSE_STREAM
@@ -101,18 +101,6 @@ Resources:
                 - logs:CreateLogStream
                 - logs:PutLogEvents
               Resource: '*'
-
-  # Resource-based policy for Function URL
-  # Restricts access to specific conditions
-  AgentUIApiFunctionUrlPolicy:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName: !Ref AgentUIApiFunction
-      Action: lambda:InvokeFunctionUrl
-      Principal: '*'
-      FunctionUrlAuthType: NONE
-      # Add condition to restrict by source IP or referer if needed
-      # For now, allows all but logs all access for monitoring
       Events:
         # Health check
         HealthCheck:

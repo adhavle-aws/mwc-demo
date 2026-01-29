@@ -88,26 +88,26 @@ const MainContent: React.FC = () => {
     setIsLoading(true);
     setStreamingContent('');
 
-    // Create a temporary "Live Response" tab while streaming
-    const streamingResponse: ParsedResponse = {
+    // Show "Working..." indicator while streaming
+    const workingResponse: ParsedResponse = {
       raw: '',
       sections: [{
         type: 'summary',
-        title: 'Live Response',
-        content: '',
+        title: 'Processing',
+        content: '⏳ Working on your request...\n\nThe agent is generating your response. This may take up to 2 minutes for complex requests.',
       }],
       tabs: [{
-        id: 'live',
-        label: '🔴 Live Response',
+        id: 'working',
+        label: '⏳ Processing',
         content: {
           type: 'summary',
-          title: 'Live Response',
-          content: '',
+          title: 'Processing',
+          content: '⏳ Working on your request...\n\nThe agent is generating your response. This may take up to 2 minutes for complex requests.',
         },
       }],
     };
-    setLastResponse(streamingResponse);
-    setActiveTab('live');
+    setLastResponse(workingResponse);
+    setActiveTab('working');
 
     try {
       // Invoke agent via API
@@ -121,32 +121,12 @@ const MainContent: React.FC = () => {
       let fullResponse = '';
       let chunkCount = 0;
 
-      // Stream response chunks
+      // Collect response chunks (don't display during streaming)
       for await (const chunk of stream) {
         chunkCount++;
         fullResponse += chunk;
-        setStreamingContent(fullResponse);
+        // Update message in background but don't show in tabs
         updateStreamingMessage(agentMessageId, fullResponse);
-        
-        // Update the live tab with streaming content
-        const liveResponse: ParsedResponse = {
-          raw: fullResponse,
-          sections: [{
-            type: 'summary',
-            title: 'Live Response',
-            content: fullResponse,
-          }],
-          tabs: [{
-            id: 'live',
-            label: '🔴 Live Response',
-            content: {
-              type: 'summary',
-              title: 'Live Response',
-              content: fullResponse,
-            },
-          }],
-        };
-        setLastResponse(liveResponse);
       }
 
       console.log('[MainContent] Received response:', {

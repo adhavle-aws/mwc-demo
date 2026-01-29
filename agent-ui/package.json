@@ -20,6 +20,10 @@
     "deploy:check": "./configure-api.sh && ./test-api-connection.sh && npm run build"
   },
   "dependencies": {
+    "@aws-crypto/sha256-browser": "^5.2.0",
+    "@aws-sdk/credential-providers": "^3.978.0",
+    "@aws-sdk/protocol-http": "^3.370.0",
+    "@aws-sdk/signature-v4": "^3.370.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/dompurify": "^3.0.5",
     "@types/prismjs": "^1.26.5",
