@@ -1,0 +1,134 @@
+{
+  "info": {
+    "name": "Agent UI API",
+    "description": "API for invoking AWS AgentCore agents (OnboardingAgent, ProvisioningAgent, MWCAgent)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://kmp3lr1x97.execute-api.us-east-1.amazonaws.com/production",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        },
+        "description": "Check if the API is healthy and running"
+      }
+    },
+    {
+      "name": "List Agents",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/list",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "list"]
+        },
+        "description": "Get list of all available agents"
+      }
+    },
+    {
+      "name": "Get Agent Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/status/onboarding",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "status", "onboarding"]
+        },
+        "description": "Check status of a specific agent (onboarding, provisioning, or mwc)"
+      }
+    },
+    {
+      "name": "Invoke OnboardingAgent - Simple S3",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"agentId\": \"onboarding\",\n  \"prompt\": \"Generate a simple S3 bucket CloudFormation template with versioning and encryption\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/invoke",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "invoke"]
+        },
+        "description": "Invoke OnboardingAgent with a simple prompt (completes in ~20 seconds)"
+      }
+    },
+    {
+      "name": "Invoke OnboardingAgent - VPC",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"agentId\": \"onboarding\",\n  \"prompt\": \"Generate a CloudFormation template for a VPC with 2 public subnets and 2 private subnets across 2 availability zones in us-east-1\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/invoke",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "invoke"]
+        },
+        "description": "Invoke OnboardingAgent with VPC prompt (completes in ~25 seconds)"
+      }
+    },
+    {
+      "name": "Invoke OnboardingAgent - 3-Tier (May Timeout)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"agentId\": \"onboarding\",\n  \"prompt\": \"Generate a cloudformation template to provision resources to meet requirements outlined in below Q and A. Output should include cloudformation template in <cfn> xml tag, architecture overview, cost optimization tips and quick summary. Q: What kind of application do you want to host? A: It is a 3 tier web application. Q: which aws region do you want the application to be hosted in? A: us-east-1. Q: Any security and/or availability requirements to keep in mind in hosting this application? A: It should be within a private network and highly available. Q: What kind of storage requirements do you have? A: We have 30GB of files and video data and 20GB of transaction data for this application. Q: Anything else you want us to consider? A: Yes, we want to have minimal operations and cost overhead. And one more thing, this app is very cpu intensive.\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/invoke",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "invoke"]
+        },
+        "description": "⚠️ WARNING: This prompt takes 60-150 seconds and will timeout through API Gateway (30s limit). Use CLI instead: cd OnboardingAgent && agentcore invoke \"<prompt>\""
+      }
+    },
+    {
+      "name": "Get Stack Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/stacks/status/my-stack-name",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "stacks", "status", "my-stack-name"]
+        },
+        "description": "Get CloudFormation stack status (replace 'my-stack-name' with actual stack name)"
+      }
+    }
+  ]
+}

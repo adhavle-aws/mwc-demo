@@ -194,7 +194,7 @@ async function withRetry<T>(
 export async function* invokeAgent(
   request: AgentInvocationRequest
 ): AsyncGenerator<string, void, unknown> {
-  const url = `${API_BASE_URL}/api/agents/invoke`;
+  const url = `${API_BASE_URL}`;
 
   logRequest('POST', url, request);
 
@@ -223,25 +223,59 @@ export async function* invokeAgent(
       return res;
     });
 
-    // Lambda returns JSON response, not streaming
-    // Format: { response: "full text", sessionId: "..." }
-    const data = await response.json();
-    
-    if (data.error) {
+    // Handle SSE streaming response from Lambda Function URL
+    if (!response.body) {
       throw new AgentAPIError(
-        data.message || 'Agent invocation failed',
+        'Response body is null',
         'agent',
         response.status,
         false
       );
     }
 
-    // Yield the complete response
-    if (data.response) {
-      yield data.response;
-    }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
 
-    logResponse(url, response.status, 'Response received');
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          logResponse(url, response.status, 'Stream complete');
+          break;
+        }
+
+        const chunk = decoder.decode(value, { stream: true });
+        
+        // Parse SSE format: "data: {\"chunk\":\"text\"}\n\n"
+        const lines = chunk.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.substring(6));
+              
+              if (data.chunk) {
+                yield data.chunk;
+              } else if (data.done) {
+                // Stream complete
+                return;
+              } else if (data.error) {
+                throw new AgentAPIError(
+                  data.error,
+                  'agent',
+                  response.status,
+                  false
+                );
+              }
+            } catch (parseError) {
+              console.warn('Failed to parse SSE line:', line);
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
   } catch (error) {
     logError(url, error as Error);
 

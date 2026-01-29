@@ -103,7 +103,7 @@ function createResponse(statusCode: number, body: any): APIGatewayProxyResult {
 }
 
 /**
- * Handle agent invocation
+ * Handle agent invocation with streaming response
  */
 async function handleAgentInvocation(
   service: AgentService,
@@ -126,14 +126,26 @@ async function handleAgentInvocation(
       });
     }
 
-    // Collect streaming response
-    // Note: API Gateway doesn't support true streaming, so we collect the full response
+    console.log('[Lambda] Starting agent invocation:', {
+      agentId,
+      promptLength: prompt.length,
+      sessionId: sessionId || 'will-generate'
+    });
+
+    // For streaming, we need to use Lambda response streaming
+    // But API Gateway doesn't support it well, so we collect and return
+    // This is a known limitation - responses > 30s will timeout
     let fullResponse = '';
     const stream = await service.invokeAgent(agentId, prompt, sessionId);
 
     for await (const chunk of stream) {
       fullResponse += chunk;
     }
+
+    console.log('[Lambda] Agent response complete:', {
+      responseLength: fullResponse.length,
+      preview: fullResponse.substring(0, 100)
+    });
 
     return createResponse(200, {
       response: fullResponse,

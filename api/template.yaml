@@ -31,8 +31,8 @@ Parameters:
 
 Globals:
   Function:
-    Timeout: 300
-    MemorySize: 512
+    Timeout: 900
+    MemorySize: 1024
     Runtime: nodejs20.x
     Architectures:
       - x86_64
@@ -48,14 +48,26 @@ Globals:
         CORS_ORIGIN: !Ref CorsOrigin
 
 Resources:
-  # Lambda Function
+  # Lambda Function with Streaming Support
   AgentUIApiFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub 'agent-ui-api-${Environment}'
-      Description: Backend API for Agent UI - handles agent invocation and CloudFormation monitoring
+      Description: Backend API for Agent UI - handles agent invocation with streaming
       CodeUri: .
-      Handler: dist/lambda.handler
+      Handler: dist/streaming-lambda.handler
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: RESPONSE_STREAM
+        Cors:
+          AllowOrigins:
+            - '*'
+          AllowMethods:
+            - GET
+            - POST
+          AllowHeaders:
+            - Content-Type
+          MaxAge: 600
       Policies:
         - Statement:
             - Effect: Allow
@@ -157,8 +169,14 @@ Resources:
       RetentionInDays: 30
 
 Outputs:
+  FunctionUrl:
+    Description: Lambda Function URL with streaming support (no timeout limit)
+    Value: !GetAtt AgentUIApiFunctionUrl.FunctionUrl
+    Export:
+      Name: !Sub '${AWS::StackName}-FunctionUrl'
+  
   ApiUrl:
-    Description: API Gateway endpoint URL
+    Description: API Gateway endpoint URL (deprecated - use FunctionUrl for streaming)
     Value: !Sub 'https://${AgentUIApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}'
     Export:
       Name: !Sub '${AWS::StackName}-ApiUrl'
