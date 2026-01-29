@@ -199,29 +199,26 @@ export async function* invokeAgent(
   logRequest('POST', url, request);
 
   try {
-    const response = await withRetry(async () => {
-      const res = await fetchWithTimeout(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(request),
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        const { type, retryable } = categorizeError(null, res.status);
-        throw new AgentAPIError(
-          `Agent invocation failed: ${res.statusText}`,
-          type,
-          res.status,
-          retryable,
-          errorText
-        );
-      }
-
-      return res;
+    // Don't use timeout for streaming requests
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
     });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      const { type, retryable } = categorizeError(null, response.status);
+      throw new AgentAPIError(
+        `Agent invocation failed: ${response.statusText}`,
+        type,
+        response.status,
+        retryable,
+        errorText
+      );
+    }
 
     // Handle SSE streaming response from Lambda Function URL
     if (!response.body) {
